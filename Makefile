@@ -6,7 +6,7 @@ CXXFLAGS = -O6 -Wall -g -D_GLIBCXX_DEBUG
 bruteForce1.pdf : bruteForce1.tex runtimes.csv
 	pdflatex bruteForce1.tex
 
-runtimes.csv : testCases.csv runTests
+runtimes.csv : testCases.csv writeFormula1 runTests
 	./summarize.pl > runtimes.csv
 
 writeFormula1: writeFormula1.cc

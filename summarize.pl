@@ -5,11 +5,13 @@ use strict;
 
 print "num. vertices,num. gates,num. random cases,wires sorted?,satisfiable?,CPU time\n";
 foreach my $f (<minisatOutput/*.txt>) {
-  my($skip, $n, $g, $random_cases, $wires_sorted) = split /_/, $f;
+  my $z = $f;
+  $z =~ s/\.txt//;
+  my($skip, $n, $g, $random_cases, $wires_sorted) = split /_/, $z;
   my $sat = "-";
   my $t = "";
 
-  $wires_sorted = $wires_sorted eq "1" ? "yes" : "no";
+  $wires_sorted = ($wires_sorted + 0 == 1) ? "yes" : "no";
 
   open IN, "<$f" || die;
   while(<IN>) {
