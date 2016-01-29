@@ -9,14 +9,12 @@ bruteForce1.pdf : bruteForce1.tex runtimes.csv
 runtimes.csv : testCases.csv runTests
 	./summarize.pl > runtimes.csv
 
-
 writeFormula1: writeFormula1.cc
 	$(CXX) $(CXXFLAGS) -o writeFormula1 writeFormula1.cc 
 
-
 .PHONY: runTests
 runTests:
-
+	./runTests.pl
 
 clean:
 	rm -rf *.o core *~ *.bak writeFormula1
