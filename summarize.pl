@@ -3,7 +3,7 @@
 
 use strict;
 
-print "# vertices,# gates,# random cases,wires sorted?,satisfiable?,CPU time\n";
+print "num. vertices,num. gates,num. random cases,wires sorted?,satisfiable?,CPU time\n";
 foreach my $f (<minisatOutput/*.txt>) {
   my($skip, $n, $g, $random_cases, $wires_sorted) = split /_/, $f;
   my $sat = "-";

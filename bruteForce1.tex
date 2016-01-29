@@ -1,0 +1,138 @@
+\documentclass[12pt]{article}
+\usepackage{csvsimple}
+\usepackage{fullpage}
+\begin{document}
+\title{A brute-force method for finding lower bounds on finding triangles using NAND gates}
+\author{Josh Burdick}
+\maketitle
+
+Here, I look at the complexity of checking whether an undirected
+graph contains a triangle (a.k.a. 3-clique, or $K_3$).
+This is a small case of the NP-complete
+CLIQUE problem. We would therefore expect it to be both hard to answer, and also difficult
+to {\em prove} hard to answer.
+
+Previously, I wrote up an attempt at a proof that
+finding triangles in 6-input graphs requires
+${6 \choose 3} + 1 = 21$ NAND gates.
+The proof has not been thoroughly checked (much less
+published), but I believe it to be correct.
+I tried pushing the same methods to get a proof for the
+$n=7$ case, but they didn't seem to be going much higher
+than ``slightly more than the number of inputs.'' 
+This is probably not surprising to anyone (at least,
+I am not surprised.)
+
+Therefore, I decided to look for other methods, which
+might get further, or at least require less thinking.
+I first tried encoding the problem
+as a quantified Boolean formula, and finding solutions
+using a BDD solver. Since that was using a ton of memory,
+I then tried looking for circuits which only {\em approximately}
+find triangles.
+
+\subsection{Motivation}
+
+Why might bounds on circuits in tiny graphs be useful? Since we're
+only looking at tiny input graphs (and circuits), such bounds have
+limited relevance to the P=NP question.
+
+It's natural to guess that ``you need at least one NAND gate per triangle'',
+and try to prove that.
+If brute-force search turned up a circuit with even one fewer NAND gate
+than there are triangles,
+then that would rule out that proof strategy.
+The structure of the circuit might be interesting (even though it wouldn't
+say anything directly about whether $P=NP$).
+
+The encoded formulas may also be useful as test problems for SAT solvers;
+benchmarks and competitions for those often require a source of
+problems known to be unsatisfiable, and/or difficult. Assuming $P \ne NP$,
+a formula corresponding to the existence of a small circuit for an NP-complete
+problem should be unsatisfiable. (To save memory, we relax the requirement
+that the circuit work on all possible inputs; this means that the formula we
+write may be satisfiable, even if no circuit with that many gates {\em exactly}
+finds triangles.)
+
+\section{Encoding as a quantified Boolean formula}
+
+One advantage of looking for bounds on NAND gate circuits
+(as opposed to, say, circuits with AND, OR, and NOT gates,
+or arbitrary Boolean functions) is that the gates are all
+the same kind. The circuit is defined {\em only} by its
+connectivity.
+
+This means that we can encode a circuit
+using a Boolean variable for each wire which might be
+present. Specifically, we can encode an $m$-input circuit
+made of $g$ NAND gates using $mg$ bits (one per input-gate
+wire), plus $g \choose 2$ bits (one per gate-gate wire).
+We also have one variable per input wire, and can code up
+a formula for ``has a triangle.''
+To code up the formula ``there is a circuit which works'', we
+have to universally quantify over the inputs (after all, the
+circuit has to work on all inputs). This causes a
+blowup in the formula size.
+
+When I ran this, with four vertices and five gates, it
+fairly quickly found a working circuit. 
+(I didn't actually print out the solution for $n=4$, with
+five gates, so it could be incorrect. Given the small numbers
+involved, I'm not planning on bothering with this.)
+For five vertices, it ruled out a circuit with five gates.
+I tried larger numbers of gates (six or seven, I don't recall
+which, but definitely less than the known lower bound of eleven
+gates), and it just allocated memory until it crashed
+my machine (a Thinkpad X200s with 8gb memory.)
+
+\subsection{Forcing wires to be sorted}
+
+I also tried adding a constraint that the rows of
+the connectivity matrix were in lexicographic order.
+(This can be done WLOG, because we can sort the
+gates in a circuit until they're in lexicographic
+order.)
+
+
+This seemed
+to make it slightly faster (data not shown), but not
+much.
+
+\section{Looking for circuits which approximately find triangles}
+
+
+In the previous attempt, we quantified over all the possible inputs. This meant that the notion of
+whether there was a triangle was part of the formula. As in razborov’s monotone circuit bound, we
+can also approximately specify how the circuit should work. (Recall that MAX-CLIQUE, at least, is
+hard to approximate, unless P=NP. FIXME CITE)
+
+The cases which have a triangle (and the circuit should output a 1) can be specified using
+$n \choose 3$ clauses. These clauses each only need to specify that three inputs are 1s.
+
+Choosen3 is the number of cliques, as it were, which would normally be limiting.
+However, in this case, the cases which lack a triangle are more problematic. Following razborov's monotone circuit bound, we can use complete bipartite graphs (cbips) as a ready source of triangle-free graphs. Similarly to the case with triangles, we don’t have to specify all the inputs -- any input graph with 1s in only a subset of a cbip’s edges is also guaranteed to be triangle-free. Therefore, for a given partition of vertices into sets A and B, we simply feed in 0s to the clique with edges in A, and similarly for B. We don’t feed in 1s to the cbip, as the 0s suffice to prevent a triangle.
+
+This approach is reminiscent of machine learning: we are asking for a ``simple'' circuit which explains some examples. In this case, of course, the examples aren’t just bitstrings, since some variables aren’t specified. In any case, it seems perfectly possible that there is a small circuit which works on these examples, but doesn’t find triangles; after all, we’re only approximately specifying a triangle-finding circuit. If a SAT solver says ``there is no circuit with $g$ gates which works on these examples'', then that implies that no correct triangle-finding circuit has $g$ gates, either.
+
+However, this may well yield a circuit which only {\em approximately} finds triangles.
+To further constrain the circuit, we can generate random triangle-free inputs, eg by picking random graphs, and knocking out random edges.
+
+
+\section{Results}
+
+For a small set of tiny problems, here are whether the problem was satisfiable
+(and there is a circuit with that many gates). Also shown is the runtime, on a
+lightly-loaded X200s laptop.
+
+\csvautotabular{runtimes.csv}
+
+\section{Conclusions}
+
+
+
+
+
+FIXME REFERENCES
+
+\end{document}
+
