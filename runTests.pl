@@ -18,7 +18,7 @@ while (<IN>) {
   # only run cases which haven't been run yet
   if (! -e $f) {
     print "[writing $f]\n";
-    system "./writeFormula1 " . (join " ", @a) . " | bc2cnf | minisat > $f";
+    system "./writeFormula1 " . (join " ", @a) . " | bc2cnf | minisat -cpu-lim 500 > $f";
   }
 }
 close IN;
