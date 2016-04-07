@@ -1,72 +1,112 @@
 \documentclass[12pt]{article}
 \usepackage{csvsimple}
 \usepackage{fullpage}
+\usepackage{hyperref}
 \begin{document}
-\title{A brute-force method for finding lower bounds on finding triangles using NAND gates}
+\title{Using co-SAT solvers to find lower bounds on detecting triangles}
 \author{Josh Burdick}
 \maketitle
 
-Here, I look at the complexity of checking whether an undirected
-graph contains a triangle (a.k.a. 3-clique, or $K_3$).
-This is a tiny case of the NP-complete
-CLIQUE problem. We would therefore expect it to be both hard to answer, and also difficult
-to {\em prove} hard to answer.
+\begin{abstract}
+Detecting whether an undirected
+graph contains a triangle (a.k.a. 3-clique, or $K_3$)
+is a tiny case of the NP-complete
+CLIQUE problem. We would therefore expect it to be both hard to answer
+quickly, and also difficult
+to {\em prove} hard to answer quickly. Here, we encode the problem of
+finding a NAND gate circuit which detects triangles, as a CNF formula
+(in DIMACS-CNF format,
+suitable as input for SAT or co-SAT solvers). This provides a
+possible source of either lower bounds, or difficult co-SAT instances
+(although it's not clear which).
+\end{abstract}
+
+The problem of
+detecting triangles has been studied, partly because it is a tiny special
+case of detecting cliques, which is NP-complete.
+In circuit terms,
+triangles can be detected using ``brute force'', using ${n \choose 3}$ AND gates
+(one per possible triangle), and an OR gate to combine the outputs of those;
+or alternatively with
+${n \choose 3} + 1$
+NAND gates.
+
+The triangle detection problem
+can also essentially be solved by multiplying two Boolean matrices
+together \cite{itai_finding_1977}. Successively faster algorithms allow doing this in
+$O(n^{2.8074})$ \cite{strassen_gaussian_1969} or
+$O(n^{2.3727})$ \cite{williams_multiplying_2012} operations. However, the big-$O$ notation
+hides large constants, and the ``operations''
+counted in analysis of those methods are multiplications. Therefore, 
+it's not obvious (to me) how many NAND gates would be required by these
+methods to find triangles.
+For instance, if the multiplication is over integer multiplication and addition,
+then it seems to depend
+on how large the intermediate products computed are, and how many
+NAND gates are required to multiply two integers.
+Thus, finding bounds on the number of NAND gates needed to detect
+triangles in small graphs may be interesting.
 
 Previously, I wrote up an attempt at a proof that
 finding triangles in 6-input graphs requires
-${6 \choose 3} + 1 = 21$ NAND gates.
-The proof has not been thoroughly checked (much less
-published), but I believe it to be correct.
+${6 \choose 3} + 1 = 21$ NAND gates \cite{burdick_triangles_6_vertex}.
+(The proof has not been thoroughly checked, or published.)
 I tried pushing the same methods to get a proof for the
 $n=7$ case, but they didn't seem to be going much higher
 than ``slightly more than the number of inputs.'' 
-This is probably not surprising to anyone (at least,
-I am not surprised.)
+(I don't think this is very surprising.)
 
-Therefore, I decided to look for other methods, which
-might get further, or at least require less thinking.
+Therefore, I decided to try applying brute force, using solvers for propositional
+logic. Development of such solvers has been accelerated by their use in logic
+circuit design.
 I first tried encoding the problem
-as a quantified Boolean formula, and finding solutions
-using a BDD solver. Since that was using a ton of memory,
-I then tried looking for circuits which only {\em approximately}
-find triangles.
+as a quantified Boolean formula, and, using a BDD solver,
+looking for a circuit which finds
+triangles (or, more importantly, ruling out
+the existence of such a circuit). Since that was using a large amount of memory,
+I then tried using a SAT (or co-SAT) solver to look
+for a circuit (or rule out the possibility of a circuit)
+which only {\em approximately} finds triangles.
 
 \subsection{Motivation}
 
-Why might bounds on circuits for tiny graphs be useful? Since we're
+Why might bounds on circuits for triangle-finding in tiny graphs be useful? Since we're
 only looking at tiny input graphs (and circuits), such bounds have
 limited relevance to the $P=NP$ question.
 
 It seems natural to guess that ``you need at least one NAND gate per triangle'',
 and try to prove that.
-If brute-force search turned up a circuit with even one fewer NAND gate
-than there are triangles,
-then that would rule out that proof strategy.
-The structure of the circuit might be interesting (even though it wouldn't
-say anything directly about whether $P=NP$).
+(This conjecture seems related to the Strong Exponential-Time Hypothesis, or SETH \cite{impagliazzo_complexity_1999}.)
+If brute-force search turned up a circuit with even {\em one}
+fewer NAND gate than there are triangles, then we would know that proof strategy wouldn't work.
+The structure of such a circuit might be interesting.
+Contrariwise, showing that the ``obvious'' bound held, even for small circuits, would be
+weak circumstantial evidence that it held in general.
 
 The encoded formulas may also be useful as test problems for SAT solvers.
-Benchmarks and competitions for those often require a source of
-problems known to be unsatisfiable, and/or difficult \cite{toughsat}.
+Showing that a formula is not satisfiable is an important problem, and
+benchmarks and competitions for solvers of such
+problems often require a source of
+test problems known to be unsatisfiable, and/or difficult to solve \cite{toughsat}.
  Assuming $P \ne NP$,
 a formula corresponding to the existence of a small circuit for an NP-complete
-problem should be unsatisfiable. (To save memory, we relax the requirement
-that the circuit work on all possible inputs; this means that the formula we
+problem should be unsatisfiable. (To reduce the problem size, we relax the requirement
+that the circuit must work on all possible inputs; this means that the formula we
 write may be satisfiable, even if no circuit with that many gates {\em exactly}
 finds triangles.)
 
 Note that this is somewhat win-win: either the generated formulas are easy to
 prove unsatisfiable (in which case we get better lower bounds on triangle finding),
 or they're hard to prove unsatisfiable (in which case we have more probably-unsatisfiable
-problems for testing SAT solvers -- admittedly this may be less of a win.)
+problems for testing co-SAT provers; admittedly this may be less of a win.)
 
 \section{Encoding as a quantified Boolean formula}
 
-One advantage of looking for bounds on NAND gate circuits
+One convenience of looking for bounds on NAND gate circuits
 (as opposed to, say, circuits with AND, OR, and NOT gates,
 or arbitrary Boolean functions) is that the gates are all
-the same kind. The circuit is defined {\em only} by its
-connectivity.
+the same kind. The circuit is defined only by its
+connectivity graph.
 
 This means that we can encode a circuit
 using a Boolean variable for each wire which might be
@@ -76,15 +116,15 @@ wire), plus $g \choose 2$ bits (one per gate-gate wire).
 We also have one variable per input wire (edge), and can code up
 a formula for ``has a triangle.''
 To code up the formula ``there is a circuit which works'', we
-have to universally quantify over the inputs (after all, the
+have to universally quantify over the inputs (because the
 circuit has to work on all inputs). This causes a
 blowup in the formula size.
 
 When I ran this, with four vertices and five gates, it
 fairly quickly found a working circuit. 
-(I didn't actually print out the solution for $n=4$, with
+\footnote{I didn't actually print out the solution for $n=4$, with
 five gates, so it could be incorrect. Given the small numbers
-involved, I'm not planning on bothering with this.)
+involved, I'm not planning on bothering with this further.}
 For five vertices, it ruled out a circuit with five gates.
 I tried larger numbers of gates (six or seven, I don't recall
 which, but definitely less than the known lower bound of eleven
@@ -95,15 +135,15 @@ my machine (a Thinkpad X200s with 8gb memory.)
 
 I also tried adding a constraint that the rows of
 the connectivity matrix are in lexicographic order.
-We can do this without loss of generality. Proof sketch:
+We can do this without loss of generality. (Proof sketch:
 pick an arbitrary order for the input wires. For all gates
 which only have front-level inputs, write their inputs as
 a bit-vector, find the lexicographically first, and call it
 $g_1$. Then find $g_2$ by only considering front-level inputs,
-and wires from $g_1$ (treating it as the most significant bit.)
+and wires from $g_1$, treating it as the most significant bit.
 Repeat until you've added all the gates.
 This defines a unique ordering of gates, such that the adjacency
-matrix of all wires is lexicographically sorted.
+matrix of all wires is lexicographically sorted.)
 
 This may have helped a bit, but not much (data not shown; I
 look at the effect of this more carefully below.)
@@ -114,17 +154,22 @@ In the previous attempt, we quantified over all the possible inputs. This meant 
 whether there was a triangle was part of the formula. As in Razborov's monotone circuit bound \cite{Razborov85lowerbounds}, we
 can also approximately specify how the circuit should work.
 MAX-CLIQUE, at least, is
-hard to approximate, unless $P=NP$ \cite{hastad_clique_1999}, so this
-may be enough to specify the formula.
+hard to approximate, unless $P=NP$ \cite{hastad_clique_1999}, so we may not have to
+specify every possible input graph to force the circuit to have many gates.
+Since the resulting formula
+is just Boolean (without quantifiers), I used a SAT solver \cite{een_extensible_2003}
+rather than a BDD solver.
 
-This approach is reminiscent of machine learning: we are asking for a ``simple'' circuit which explains some examples. At first,
+This approach is reminiscent of machine learning: we are asking for a ``simple'' circuit
+which explains some examples. At first,
 I used the $n \choose 3$ cases which have one triangle (and zeros elsewhere) as
 positive examples. Following Razborov's monotone circuit bound \cite{Razborov85lowerbounds}, 
-I used complete bipartite graphs (``CBIPs'') as negative examples.
+I used complete bipartite graphs as negative examples.
 
 This small number of examples was enough to show that, with four vertices,
 at least five gates were needed. However, with five vertices, there were
-circuits which distinguished those test cases, but had fewer than ${5 \choose 2} + 1$ gates. Therefore, I added test cases which were random graphs,
+circuits which distinguished those test cases, but had fewer than ${5 \choose 2} + 1 = 11$ gates.
+Therefore, I added ``test cases'' which were random graphs,
 and added a constraint that the circuit would output 0 or 1 (according
 to whether the graph contained a triangle.)
 
@@ -142,21 +187,23 @@ lightly-loaded X200s laptop. (Where ``satisfiable?'' is -, I stopped the program
 This approach didn't improve the lower bounds. However, it was
 less memory-intensive than using BDDs. It may be a useful source
 of ``likely to be unsatisfiable'' SAT instances.
-Forcing the wires to be sorted didn't help much.
+Forcing the wires' adjacency matrix to be sorted didn't help much.
 
 \subsection{Future work}
 
-Boiling the problem down to propositional logic presumably loses a lot of the inherent
-symmetry in the problem. However, fully automated SAT solvers are arguably more developed
-than fully automated first- or higher-order theorem provers.
-
 Rather than using random graphs as training data, it might be possible to choose those
-more systematically. Possibly graphs with multiple triangles would be good positive examples.
-Or, perhaps two-edge paths (which are triangles with an edge removed) would be good negative
+more systematically. Possibly graphs with multiple triangles would be 
+better positive examples.
+Or, perhaps two-edge paths (which are triangles with an edge removed) would be better negative
 examples.
 
+Boiling the problem down to propositional logic presumably loses a lot of the inherent
+symmetry in the problem. However, fully automated SAT solvers (that is, zero-order
+theorem provers) are arguably more developed
+than fully automated first- or higher-order theorem provers.
+
 \bibliography{references}
-\bibliographystyle{plain}
+\bibliographystyle{unsrt}
 
 \end{document}
 
