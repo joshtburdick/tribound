@@ -135,15 +135,15 @@ my machine (a Thinkpad X200s with 8gb memory.)
 
 I also tried adding a constraint that the rows of
 the connectivity matrix are in lexicographic order.
-We can do this without loss of generality. (Proof sketch:
+We can do this without loss of generality. Proof sketch:
 pick an arbitrary order for the input wires. For all gates
 which only have front-level inputs, write their inputs as
 a bit-vector, find the lexicographically first, and call it
 $g_1$. Then find $g_2$ by only considering front-level inputs,
-and wires from $g_1$, treating it as the most significant bit.
+and (possible) wires from $g_1$, treating it as the most significant bit.
 Repeat until you've added all the gates.
 This defines a unique ordering of gates, such that the adjacency
-matrix of all wires is lexicographically sorted.)
+matrix of all wires is lexicographically sorted.
 
 This may have helped a bit, but not much (data not shown; I
 look at the effect of this more carefully below.)
