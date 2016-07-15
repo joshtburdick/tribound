@@ -35,16 +35,17 @@ The triangle detection problem
 can also essentially be solved by multiplying two Boolean matrices
 together \cite{itai_finding_1977}. Successively faster algorithms allow doing this in
 $O(n^{2.8074})$ \cite{strassen_gaussian_1969} or
-$O(n^{2.3727})$ \cite{williams_multiplying_2012} operations. However, the big-$O$ notation
+$O(n^{2.3727})$ \cite{williams_multiplying_2012} operations. The big-$O$ notation
 hides large constants, and the ``operations''
-counted in analysis of those methods are multiplications. Therefore, 
-it's not obvious (to me) how many NAND gates would be required by these
-methods to find triangles.
-For instance, if the multiplication is over integer multiplication and addition,
-then it seems to depend
-on how large the intermediate products computed are, and how many
-NAND gates are required to multiply two integers.
-Thus, finding bounds on the number of NAND gates needed to detect
+counted in analysis of those methods are multiplications, which can involve large
+numbers.
+However, to multiply $n$-by-$n$ Boolean matrices, we can use addition and multiplication
+mod $n+1$ (FIXME cite CLR), avoiding computing large numbers.
+Thus, such matrix multiplication algorithms allow triangle detection
+which asymptotically use fewer than $\Omega(n^3)$ NAND gates.
+\footnote{In a previous version of this, I didn't realize this, and so thought
+that the ${n \choose 3} + 1$ circuit might be optimal; I now realize that it isn't.}
+Nonetheless, finding bounds on the number of NAND gates needed to detect
 triangles in small graphs may be interesting.
 
 Previously, I wrote up an attempt at a proof that
@@ -77,11 +78,8 @@ limited relevance to the $P=NP$ question.
 It seems natural to guess that ``you need at least one NAND gate per triangle'',
 and try to prove that.
 (This conjecture seems related to the Strong Exponential-Time Hypothesis, or SETH \cite{impagliazzo_complexity_1999}.)
-If brute-force search turned up a circuit with even {\em one}
-fewer NAND gate than there are triangles, then we would know that proof strategy wouldn't work.
-The structure of such a circuit might be interesting.
-Contrariwise, showing that the ``obvious'' bound held, even for small circuits, would be
-weak circumstantial evidence that it held in general.
+(However, as noted earlier, using fast multiplication methods, you don't need
+at least one NAND gate per triangle.)
 
 The encoded formulas may also be useful as test problems for SAT solvers.
 Showing that a formula is not satisfiable is an important problem, and
